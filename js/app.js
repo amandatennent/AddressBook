@@ -34,12 +34,38 @@
         }).success(function(message) {
             this.newContact.ID = message.id;
             this.this.setState({contacts: this.this.state.contacts.concat([newContact]) });
+            $('#alerts').append("<div class='alert alert-success fade in'>Contact has been added</div>").delay(5000).fadeOut();
         }).error(function(){
-            alert("There was an error adding your contact.")
+            $('#alert').append("<div class='alert alert-danger fade in'>There was an error adding your contact</div>").delay(5000).fadeOut();
         });
 
         $('#add-contact').modal('toggle');
         $('#add-contact-form').trigger("reset");
+    }
+
+    _editContact(ID, Name, Phone, Email) {
+        const newContact = {
+                ID,
+                Name,
+                Phone,
+                Email
+        };
+
+        let editURL = 'Api/Contacts/' + ID;
+
+        $.ajax({
+            method: 'PUT',
+            url: editURL,
+            data: newContact,
+            context: { newContact, this }
+        }).success(function(message) {
+            this.this._fetchContacts();
+            $('#alerts').append("<div class='alert alert-success fade in'>Contact has been updated</div>").delay(5000).fadeOut();
+        }).error(function(message) {
+            $('#alert').append("<div class='alert alert-danger fade in'>There was an error updating your contact</div>").delay(5000).fadeOut();
+        });
+
+        $('#edit-contact').modal('toggle');
     }
 
     _fetchContacts() {
@@ -84,8 +110,9 @@
                         }
                         </tbody>
                     </table>
-                    <PhoneModal />
+                    <ViewPhoneModal />
                     <AddContactModal addContact={this._addContact.bind(this)} />
+                    <EditContactModal editContact={this._editContact.bind(this)} />
                 </section>
         );
     }
@@ -103,7 +130,7 @@ class Contact extends React.Component {
 
         return (
                 <tr>
-                    <td className="v-middle"><a href='#' data-toggle="modal" data-target="#edit-contact">{this.props.name}</a></td>
+                    <td className="v-middle"><a href='#' onClick={this._onClickEdit.bind(this)}>{this.props.name}</a></td>
                     <td className="v-middle text-right">
                         {this.props.email && <a href={emailBody}>Email</a>}
                         {this.props.phone && <a href="#" onClick={this._onClickPhone.bind(this)}>Phone</a>}
@@ -112,8 +139,7 @@ class Contact extends React.Component {
         );
     }
 
-    _onClickPhone()
-    {
+    _onClickPhone(){
         // Set the header
         $('#view-phone #view-phone-header').text(this.props.name + "\'s Phone Number");
 
@@ -121,7 +147,21 @@ class Contact extends React.Component {
         $('#view-phone #view-phone-content').text(this.props.phone);
 
         // Show the phone modal
-        $('#view-phone').modal('toggle')
+        $('#view-phone').modal('toggle');
+    }
+
+    _onClickEdit(){
+        // Set the header
+        $('#edit-contact #edit-contact-header').text("Edit " + this.props.name + "\'s Contact Details");
+
+        // Set the values in the edit modal's input fields
+        $('#edit-contact #edit-id').val(this.props.idNumber);
+        $('#edit-contact #edit-name').val(this.props.name);
+        $('#edit-contact #edit-phone').val(this.props.phone);
+        $('#edit-contact #edit-email').val(this.props.email);
+
+        // Show the edit modal
+        $('#edit-contact').modal('toggle');
     }
 }
 
@@ -139,7 +179,7 @@ class AddContactModal extends React.Component{
                             <form id="add-contact-form" role="form" onSubmit={this._handleSubmit.bind(this)}>
                                 <div className="form-group">
                                     <label for="name">Name:</label>
-                                    <input id="try-this" type="text" className="form-control" id="name" placeholder="Enter Name" ref={(input) => this._name = input} />
+                                    <input type="text" className="form-control" id="name" placeholder="Enter Name" ref={(input) => this._name = input} />
                                 </div>
                                 <div className="form-group">
                                     <label for="phone">Phone Number:</label>
@@ -163,11 +203,8 @@ class AddContactModal extends React.Component{
     _handleSubmit(event) {
         event.preventDefault();
 
-        let name = this._name.value;
-        let phone = this._phone.value;
-        let email = this._email.value;
-
-        this.props.addContact(name, phone, email);
+        this.props.addContact(this._name.value, this._phone.value, this._email.value);
+        // Note: the closing of the modal is handled in the function above to ensure the data is saved before it is disposed.
     }
 
     componentDidMount() {
@@ -177,11 +214,57 @@ class AddContactModal extends React.Component{
     }
 }
 
-class PhoneModal extends React.Component {
+class EditContactModal extends React.Component {
     render() {
-        let elementID = "view-phone";
         return(
-            <div className="modal fade" id={elementID} tabindex="-1">
+            <div className="modal fade" id='edit-contact' tabindex="-1">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <button type="button" className="close" data-dismiss="modal">&times;</button>
+                            <h4 id="edit-contact-header" className="modal-title">Edit Details</h4>
+                        </div>
+                        <div className="modal-body">
+                            <div id='edit-contact-content'>
+                            <form id="edit-contact-form" role="form" onSubmit={this._handleSubmit.bind(this)}>
+                                <input id="edit-id" type="hidden" ref={(input) => this._id = input} />
+                                <div className="form-group">
+                                    <label for="name">Name:</label>
+                                    <input id="edit-name" type="text" className="form-control" placeholder="Enter Name" ref={(input) => this._name = input} />
+                                </div>
+                                <div className="form-group">
+                                    <label for="phone">Phone Number:</label>
+                                    <input id="edit-phone" type="tel" className="form-control" placeholder="Enter Phone Number" ref={(input) => this._phone = input} />
+                                </div>
+                                <div className="form-group">
+                                    <label for="email">Email Address:</label>
+                                    <input id="edit-email" type="email" className="form-control" placeholder="Enter Email Address" ref={(input) => this._email = input} />
+                                </div>
+                                <button type="submit" className="btn btn-default">Save</button>
+                            </form>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    _handleSubmit(event)
+    {
+        event.preventDefault();
+        this.props.editContact(this._id.value, this._name.value, this._phone.value, this._email.value);
+        // Note: the closing of the modal is handled in the function above to ensure the data is saved before it is disposed.
+    }
+}
+
+class ViewPhoneModal extends React.Component {
+    render() {
+        return(
+            <div className="modal fade" id='view-phone' tabindex="-1">
                 <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">

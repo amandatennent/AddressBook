@@ -13,9 +13,10 @@ Note: the database and API are not included in this repository.
 - Add / View all contacts
 - View contact's phone number in a modal
 - Email link
+- Edit contacts
 
 ## Upcoming Functionality
-- Edit / Remove contacts
+- Remove contacts
 
 ## What am I using?
 - React.js

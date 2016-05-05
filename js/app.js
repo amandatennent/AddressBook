@@ -18,7 +18,6 @@
         this.setState({ searchString: e.target.value });
     }
 
-
     _addContact(Name, Phone, Email) {
         const newContact = {
             Name,
@@ -32,8 +31,7 @@
             data: newContact,
             context: {newContact, this}
         }).success(function(message) {
-            this.newContact.ID = message.id;
-            this.this.setState({contacts: this.this.state.contacts.concat([newContact]) });
+            this.this._fetchContacts();
             $('#alerts').append("<div class='alert alert-success fade in'>Contact has been added</div>").delay(5000).fadeOut();
         }).error(function(){
             $('#alert').append("<div class='alert alert-danger fade in'>There was an error adding your contact</div>").delay(5000).fadeOut();
@@ -58,33 +56,65 @@
             url: editURL,
             data: newContact,
             context: { newContact, this }
-        }).success(function(message) {
+        }).success(function() {
             this.this._fetchContacts();
             $('#alerts').append("<div class='alert alert-success fade in'>Contact has been updated</div>").delay(5000).fadeOut();
-        }).error(function(message) {
+        }).error(function() {
             $('#alert').append("<div class='alert alert-danger fade in'>There was an error updating your contact</div>").delay(5000).fadeOut();
         });
 
         $('#edit-contact').modal('toggle');
     }
 
+    _removeContact(ID, Name) {
+        // Confirm if the user wants to delete the contact
+
+        if(confirm("Are you sure you want to delete " + Name + " from your address book?"))
+        {
+            let deleteURL = 'Api/Contacts/' + ID;
+            $.ajax({
+                method: 'DELETE',
+                url: deleteURL,
+                context: { this }
+            }).success(function() {
+                $('#alerts').append("<div class='alert alert-success fade in'>Contact has been removed</div>").delay(5000).fadeOut();
+                this.this._fetchContacts();
+            }).error(function(){
+                $('#alert').append("<div class='alert alert-danger fade in'>There was an error removing contact from your address book</div>").delay(5000).fadeOut();
+            });
+        }
+    }
+
     _fetchContacts() {
         $.ajax({
             method: 'GET',
             url: 'Api/Contacts',
+            context: { this },
             success: (contacts) => {
                 this.setState({ contacts });
             }
+        }).success(function(contacts){
+            contacts.sort(function(a, b){
+                var nameA = a.Name.toLowerCase(), nameB = b.Name.toLowerCase();
+                if (nameA < nameB) //sort string ascending
+                    return -1;
+
+                if (nameA > nameB)
+                    return 1;
+
+                return 0; //default return value (no sorting)
+            });
+            this.this.setState({ contacts });
         });
     }
 
     render(){
-        var libraries = this.state.contacts;
+        var contacts = this.state.contacts;
         var searchString = this.state.searchString.trim().toLowerCase();
 
         if (searchString.length > 0)
         {
-            libraries = libraries.filter(function(item){
+            contacts = contacts.filter(function(item){
                 return item.Name.toLowerCase().match(searchString);
             });
         }
@@ -102,11 +132,11 @@
                     <table className="table table-striped spacer">
                         <tbody>
                         {
-                            libraries.map(function(item){
+                            contacts.map(function(item){
                                 return(
-                                    <Contact name={item.Name} email={item.Email} phone={item.Phone} idNumber={item.ID} key={item.ID} />
+                                    <Contact name={item.Name} email={item.Email} phone={item.Phone} idNumber={item.ID} key={item.ID} removeContact={this._removeContact.bind(this)}  />
                                 )
-                            })
+                            }.bind(this))
                         }
                         </tbody>
                     </table>
@@ -130,7 +160,10 @@ class Contact extends React.Component {
 
         return (
                 <tr>
-                    <td className="v-middle"><a href='#' onClick={this._onClickEdit.bind(this)}>{this.props.name}</a></td>
+                    <td className="v-middle">
+                        <a href="#" className="text-red" onClick={this._onClickRemove.bind(this)}><span className="glyphicon glyphicon-remove" /  ></a>
+                        <a href='#' onClick={this._onClickEdit.bind(this)}>{this.props.name}</a>
+                    </td>
                     <td className="v-middle text-right">
                         {this.props.email && <a href={emailBody}>Email</a>}
                         {this.props.phone && <a href="#" onClick={this._onClickPhone.bind(this)}>Phone</a>}
@@ -162,6 +195,11 @@ class Contact extends React.Component {
 
         // Show the edit modal
         $('#edit-contact').modal('toggle');
+    }
+
+    _onClickRemove()
+    {
+        this.props.removeContact(this.props.idNumber, this.props.name);
     }
 }
 
@@ -253,8 +291,7 @@ class EditContactModal extends React.Component {
         );
     }
 
-    _handleSubmit(event)
-    {
+    _handleSubmit(event) {
         event.preventDefault();
         this.props.editContact(this._id.value, this._name.value, this._phone.value, this._email.value);
         // Note: the closing of the modal is handled in the function above to ensure the data is saved before it is disposed.

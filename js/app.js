@@ -172,7 +172,8 @@ class Contact extends React.Component {
         );
     }
 
-    _onClickPhone(){
+    _onClickPhone(event){
+        event.preventDefault();
         // Set the header
         $('#view-phone #view-phone-header').text(this.props.name + "\'s Phone Number");
 
@@ -183,7 +184,8 @@ class Contact extends React.Component {
         $('#view-phone').modal('toggle');
     }
 
-    _onClickEdit(){
+    _onClickEdit(event){
+        event.preventDefault();
         // Set the header
         $('#edit-contact #edit-contact-header').text("Edit " + this.props.name + "\'s Contact Details");
 
@@ -197,8 +199,8 @@ class Contact extends React.Component {
         $('#edit-contact').modal('toggle');
     }
 
-    _onClickRemove()
-    {
+    _onClickRemove(event){
+        event.preventDefault();
         this.props.removeContact(this.props.idNumber, this.props.name);
     }
 }

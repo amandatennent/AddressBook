@@ -27,7 +27,7 @@
 
         $.ajax({
             method: 'POST',
-            url: 'Api/Contacts',
+            url: 'http://example-env.ap-southeast-2.elasticbeanstalk.com/Api/Contacts',
             data: newContact,
             context: {newContact, this}
         }).success(function(message) {
@@ -49,7 +49,7 @@
                 Email
         };
 
-        let editURL = 'Api/Contacts/' + ID;
+        let editURL = 'http://example-env.ap-southeast-2.elasticbeanstalk.com/Api/Contacts/' + ID;
 
         $.ajax({
             method: 'PUT',
@@ -71,7 +71,7 @@
 
         if(confirm("Are you sure you want to delete " + Name + " from your address book?"))
         {
-            let deleteURL = 'Api/Contacts/' + ID;
+            let deleteURL = 'http://example-env.ap-southeast-2.elasticbeanstalk.com/Api/Contacts/' + ID;
             $.ajax({
                 method: 'DELETE',
                 url: deleteURL,
@@ -88,7 +88,7 @@
     _fetchContacts() {
         $.ajax({
             method: 'GET',
-            url: 'Api/Contacts',
+            url: 'http://example-env.ap-southeast-2.elasticbeanstalk.com/Api/Contacts',
             context: { this },
             success: (contacts) => {
                 this.setState({ contacts });
